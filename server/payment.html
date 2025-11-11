@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExamShield - Payment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .license-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+        }
+        .price {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .payment-options {
+            margin: 30px 0;
+        }
+        .payment-btn {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: white;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .payment-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .payment-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.show {
+            display: block;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading.show {
+            display: block;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Complete Your Purchase</h1>
+        <p class="subtitle">ExamShield License Activation</p>
+        
+        <div id="licenseInfo" class="license-info">
+            <div class="info-row">
+                <span class="info-label">License Type:</span>
+                <span class="info-value" id="licenseType">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value" id="customerName">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value" id="customerEmail">-</span>
+            </div>
+        </div>
+        
+        <div class="price" id="price">$99.99</div>
+        
+        <div class="payment-options">
+            <button class="payment-btn primary" id="razorpayBtn" onclick="initiateRazorpay()">
+                Pay with Razorpay
+            </button>
+            <button class="payment-btn" id="stripeBtn" onclick="initiateStripe()">
+                Pay with Stripe
+            </button>
+            <button class="payment-btn" id="testPaymentBtn" onclick="simulatePayment()">
+                Test Payment (Simulate)
+            </button>
+            <button class="payment-btn" id="trialBtn" onclick="startTrial()">
+                Start Free Trial (7 days)
+            </button>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Processing payment...</p>
+        </div>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const urlParams = new URLSearchParams(window.location.search);
+        const licenseKey = urlParams.get('key');
+        
+        let licenseData = null;
+
+        // Load license information
+        async function loadLicenseInfo() {
+            if (!licenseKey) {
+                showMessage('No license key provided', 'error');
+                return;
+            }
+
+            try {
+                // Get license info from server (you'll need to add this endpoint)
+                const response = await fetch(`${API_URL}/license-info?key=${licenseKey}`);
+                if (response.ok) {
+                    licenseData = await response.json();
+                    document.getElementById('licenseType').textContent = (licenseData.device_type || 'individual').toUpperCase();
+                    document.getElementById('customerName').textContent = licenseData.name || '—';
+                    document.getElementById('customerEmail').textContent = licenseData.email || '—';
+                } else {
+                    // Keep placeholders, show message
+                    showMessage('Could not load license info. You can still continue to payment.', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error while loading license info.', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = text;
+            msgDiv.className = `message ${type} show`;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
+        }
+
+        // Razorpay Integration
+        function initiateRazorpay() {
+            if (!licenseKey) {
+                showMessage('License key is required', 'error');
+                return;
+            }
+
+            showLoading(true);
+            
+            // Create order on server
+            fetch(`${API_URL}/create-razorpay-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    license_key: licenseKey,
+                    amount: 9999, // Amount in paise (₹99.99)
+                    currency: 'INR'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.order_id) {
+                    const options = {
+                        key: data.razorpay_key, // Your Razorpay key
+                        amount: data.amount,
+                        currency: data.currency,
+                        name: 'ExamShield',
+                        description: 'ExamShield License',
+                        order_id: data.order_id,
+                        handler: function(response) {
+                            verifyPayment(response, 'razorpay');
+                        },
+                        prefill: {
+                            email: licenseData?.email || '',
+                            name: licenseData?.name || ''
+                        },
+                        theme: {
+                            color: '#667eea'
+                        }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                    showLoading(false);
+                } else {
+                    showMessage(data.error || 'Failed to create order', 'error');
+                    showLoading(false);
+                }
+            })
+            .catch(error => {
+                showMessage('Payment initialization failed', 'error');
+                showLoading(false);
+            });
+        }
+
+        // Stripe Integration
+        function initiateStripe() {
+            showMessage('Stripe integration coming soon. Use Razorpay or test payment.', 'error');
+        }
+
+        // Test Payment (Simulate webhook)
+        async function simulatePayment() {
+            if (!licenseKey) {
+                showMessage('License key missing in URL', 'error');
+                return;
+            }
+
+            // Try load info if not present
+            if (!licenseData) {
+                await loadLicenseInfo();
+            }
+            // Fallback: prompt email if still missing
+            if (!licenseData || !licenseData.email) {
+                const emailFallback = prompt('Enter your registration email to simulate payment:');
+                if (!emailFallback) {
+                    showMessage('Email required to simulate payment', 'error');
+                    return;
+                }
+                licenseData = Object.assign({}, licenseData || {}, { email: emailFallback });
+                const emailEl = document.getElementById('customerEmail');
+                if (emailEl) emailEl.textContent = emailFallback;
+            }
+
+            if (!confirm('This will simulate a successful payment. Continue?')) {
+                return;
+            }
+
+            showLoading(true);
+
+            // Simulate payment webhook
+            fetch(`${API_URL}/webhook/payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Webhook-Signature': 'test-signature' // For testing
+                },
+                body: JSON.stringify({
+                    status: 'paid',
+                    email: licenseData.email,
+                    id: `test_${Date.now()}`,
+                    amount: 99.99
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showLoading(false);
+                if (data.success) {
+                    showMessage('Payment successful! Check your email for license details.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/success?key=' + licenseKey;
+                    }, 2000);
+                } else {
+                    showMessage(data.error || data.message || 'Payment failed', 'error');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showMessage('Payment processing error', 'error');
+            });
+        }
+
+        function verifyPayment(paymentResponse, provider) {
+            showLoading(true);
+            
+            fetch(`${API_URL}/verify-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: provider,
+                    payment_response: paymentResponse,
+                    license_key: licenseKey
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showLoading(false);
+                if (data.success) {
+                    showMessage('Payment successful! Check your email for license details.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/success?key=' + licenseKey;
+                    }, 2000);
+                } else {
+                    showMessage(data.error || data.message || 'Payment verification failed', 'error');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showMessage('Payment verification error', 'error');
+            });
+        }
+
+        // Configure payment buttons based on server config
+        async function configurePaymentOptions() {
+            try {
+                const res = await fetch(`${API_URL}/payment-config`);
+                if (res.ok) {
+                    const cfg = await res.json();
+                    // Razorpay
+                    if (!cfg.razorpay_enabled) {
+                        const btn = document.getElementById('razorpayBtn');
+                        btn.disabled = true;
+                        btn.textContent = 'Card/UPI (Temporarily unavailable)';
+                        btn.style.opacity = '0.6';
+                        btn.style.cursor = 'not-allowed';
+                    }
+                    // Stripe
+                    if (!cfg.stripe_enabled) {
+                        const sbtn = document.getElementById('stripeBtn');
+                        sbtn.disabled = true;
+                        sbtn.textContent = 'Stripe (Coming soon)';
+                        sbtn.style.opacity = '0.6';
+                        sbtn.style.cursor = 'not-allowed';
+                    }
+                }
+            } catch (e) {
+                // If config fetch fails, keep defaults
+            }
+        }
+
+        // Load on page load
+        loadLicenseInfo();
+        configurePaymentOptions();
+
+        // Start free trial
+        async function startTrial() {
+            if (!licenseKey) {
+                showMessage('License key missing in URL', 'error');
+                return;
+            }
+            if (!confirm('Start 7-day free trial? You can purchase anytime.')) {
+                return;
+            }
+            showLoading(true);
+            try {
+                const res = await fetch(`${API_URL}/activate-trial`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ license_key: licenseKey })
+                });
+                const data = await res.json();
+                showLoading(false);
+                if (res.ok && data.success) {
+                    showMessage('Free trial activated. Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/success?trial=true';
+                    }, 1200);
+                } else {
+                    showMessage(data.error || 'Failed to activate trial', 'error');
+                }
+            } catch (e) {
+                showLoading(false);
+                showMessage('Network error while activating trial', 'error');
+            }
+        }
+    </script>
+    
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</body>
+</html>
+

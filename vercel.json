@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/register-page",
+      "destination": "https://your-backend-domain.example.com/register-page"
+    },
+    {
+      "source": "/payment",
+      "destination": "https://your-backend-domain.example.com/payment"
+    },
+    {
+      "source": "/success",
+      "destination": "https://your-backend-domain.example.com/success"
+    },
+    {
+      "source": "/license-info",
+      "destination": "https://your-backend-domain.example.com/license-info"
+    },
+    {
+      "source": "/payment-config",
+      "destination": "https://your-backend-domain.example.com/payment-config"
+    },
+    {
+      "source": "/verify",
+      "destination": "https://your-backend-domain.example.com/verify"
+    },
+    {
+      "source": "/webhook/payment",
+      "destination": "https://your-backend-domain.example.com/webhook/payment"
+    },
+    {
+      "source": "/admin",
+      "destination": "https://your-backend-domain.example.com/admin"
+    },
+    {
+      "source": "/admin/reports",
+      "destination": "https://your-backend-domain.example.com/admin/reports"
+    },
+    {
+      "source": "/public/reports",
+      "destination": "https://your-backend-domain.example.com/public/reports"
+    }
+  ]
+}
+
