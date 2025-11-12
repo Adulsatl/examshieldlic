@@ -31,6 +31,7 @@ ES_DATA_DIR = os.getenv('ES_DATA_DIR', './data')
 FLASK_PORT = int(os.getenv('FLASK_PORT', '8080'))
 PORT = int(os.getenv('PORT', str(FLASK_PORT)))  # For platforms that set PORT (e.g., Render/Heroku)
 FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'  # Disable debug in production
 
 LICENSE_DB_PATH = os.path.join(ES_DATA_DIR, 'license_db.json')
 
@@ -365,7 +366,7 @@ Payment Amount: ${amount if amount else 'N/A'}
 
 NEXT STEPS:
 
-1. Download ExamShield from: https://adulsportfolio.vercel.app
+1. Download ExamShield from: https://adulsportfolio.vercel.app/shop
 2. During installation, enter your License Key: {license_key}
 3. Your license will be automatically verified and activated
 
@@ -382,7 +383,7 @@ Thank you for choosing ExamShield!
 
 Best regards,
 ExamShield Team
-https://adulsportfolio.vercel.app
+https://adulsportfolio.vercel.app/shop
 """
         
         email_sent = send_email(customer_email, email_subject, email_body)
@@ -609,11 +610,26 @@ def create_razorpay_order():
     """Create Razorpay order for payment"""
     data = request.get_json()
     license_key = data.get('license_key', '').strip()
-    amount = data.get('amount', 9999)  # Amount in paise
+    amount = data.get('amount')  # Amount in paise (optional, will be determined from license)
     currency = data.get('currency', 'INR')
     
     if not license_key:
         return jsonify({'error': 'License key required'}), 400
+    
+    # Load license to get device type and determine price
+    db = load_license_db()
+    if license_key not in db:
+        return jsonify({'error': 'License key not found'}), 404
+    
+    license_entry = db[license_key]
+    device_type = license_entry.get('device_type', 'individual')
+    
+    # Set amount based on license type if not provided
+    if not amount:
+        if device_type == 'organization':
+            amount = 29999  # $299.99 in paise (₹299.99)
+        else:
+            amount = 9999   # $99.99 in paise (₹99.99)
     
     # Check if Razorpay is configured
     razorpay_key_id = os.getenv('RAZORPAY_KEY_ID', '')
@@ -694,13 +710,20 @@ def verify_payment():
             # Payment verified - activate license via webhook simulation
             entry = db[license_key]
             customer_email = entry.get('email', '')
+            device_type = entry.get('device_type', 'individual')
+            
+            # Get payment amount based on device type
+            payment_amount = entry.get('payment_amount')
+            if not payment_amount:
+                payment_amount = 299.99 if device_type == 'organization' else 99.99
+                entry['payment_amount'] = payment_amount
             
             # Simulate webhook call
             webhook_data = {
                 'status': 'paid',
                 'email': customer_email,
                 'id': payment_response.get('razorpay_payment_id'),
-                'amount': entry.get('payment_amount', 99.99)
+                'amount': payment_amount
             }
             
             # Activate license (reuse webhook logic)
@@ -739,7 +762,10 @@ def send_license_email(entry, activation_date, expiry_date, transaction_id):
     name = entry.get('name', 'Customer')
     device_type = entry.get('device_type', 'individual')
     customer_email = entry.get('email')
-    amount = entry.get('payment_amount', 99.99)
+    # Get payment amount from entry or set default based on device type
+    amount = entry.get('payment_amount')
+    if not amount:
+        amount = 299.99 if device_type == 'organization' else 99.99
     
     activation_date_str = activation_date.strftime('%B %d, %Y')
     expiry_date_str = expiry_date.strftime('%B %d, %Y')
@@ -768,7 +794,7 @@ Payment Amount: ${amount if amount else 'N/A'}
 
 NEXT STEPS:
 
-1. Download ExamShield from: https://adulsportfolio.vercel.app
+1. Download ExamShield from: https://adulsportfolio.vercel.app/shop
 2. During installation, enter your License Key: {license_key}
 3. Your license will be automatically verified and activated
 
@@ -785,7 +811,7 @@ Thank you for choosing ExamShield!
 
 Best regards,
 ExamShield Team
-https://adulsportfolio.vercel.app
+https://adulsportfolio.vercel.app/shop
 """
     
     send_email(customer_email, email_subject, email_body)
@@ -830,7 +856,7 @@ Trial Started: {trial_start.strftime('%B %d, %Y')}
 Trial Expires: {trial_end.strftime('%B %d, %Y')}
 
 NEXT STEPS:
-1. Download ExamShield from: https://adulsportfolio.vercel.app
+1. Download ExamShield from: https://adulsportfolio.vercel.app/shop
 2. Install normally. The client will allow usage in trial mode for 7 days.
 3. You can purchase anytime to activate a full license.
 
@@ -838,7 +864,7 @@ Thank you for trying ExamShield!
 
 Best regards,
 ExamShield Team
-https://adulsportfolio.vercel.app
+https://adulsportfolio.vercel.app/shop
 """
         send_email(customer_email, email_subject, email_body)
     except Exception:
@@ -853,5 +879,6 @@ def health():
 if __name__ == '__main__':
     print(f"Starting ExamShield License Server on {FLASK_HOST}:{PORT}")
     print(f"License DB: {LICENSE_DB_PATH}")
-    app.run(host=FLASK_HOST, port=PORT, debug=True)
+    print(f"Debug mode: {DEBUG}")
+    app.run(host=FLASK_HOST, port=PORT, debug=DEBUG)
 

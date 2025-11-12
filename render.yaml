@@ -6,6 +6,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python license_server.py
     envVars:
+      # SMTP Configuration (Email Delivery)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -14,16 +15,28 @@ services:
         sync: false
       - key: SMTP_PASSWORD
         sync: false
+      # Security Secrets
       - key: WEBHOOK_SECRET
         sync: false
       - key: ADMIN_SECRET
         sync: false
+      # Data Directory (Render Persistent Disk)
       - key: ES_DATA_DIR
         value: /opt/render/project/src/server/data
+      # Flask Server Configuration
       - key: FLASK_HOST
         value: 0.0.0.0
       - key: FLASK_PORT
         value: 10000
+      # Payment Provider (Razorpay)
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      # Public Reports (Optional)
       - key: PUBLIC_REPORTS_ENABLED
+        value: false
+      # Debug Mode (Disable in production)
+      - key: DEBUG
         value: false
 

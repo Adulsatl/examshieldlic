@@ -176,6 +176,14 @@
         // Get API URL from current host
         const API_URL = window.location.origin;
 
+        // Check URL parameters for pre-selection
+        const urlParams = new URLSearchParams(window.location.search);
+        const licenseType = urlParams.get('type');
+        if (licenseType === 'individual' || licenseType === 'organization') {
+            document.getElementById('device_type').value = licenseType;
+            updateNameField();
+        }
+
         function updateNameField() {
             const deviceType = document.getElementById('device_type').value;
             const nameLabel = document.getElementById('nameLabel');

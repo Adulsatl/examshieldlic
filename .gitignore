@@ -17,8 +17,8 @@ backups/
 
 # Environment variables
 .env
-config.env
 *.env.local
+# Note: config.env is a template, keep it in git
 
 # IDE
 .vscode/

@@ -82,8 +82,7 @@ import json, os, subprocess, time, requests
 from PIL import Image, ImageTk
 CFG="/etc/examshield/config.json"; LOGO="/opt/examshield/logo.png"
 VER_FILE="/etc/examshield/version"
-VERIFY_URL=os.getenv("ES_VERIFY_URL","https://license.yourdomain.com/verify")
-VERIFY_URL=os.getenv("ES_VERIFY_URL","http://localhost:8080/verify")
+VERIFY_URL=os.getenv("ES_VERIFY_URL","https://examshield-license-erver.onrender.com/verify")
 
 def verify_key_online(key):
     """Verify license key online"""

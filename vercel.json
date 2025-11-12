@@ -3,43 +3,43 @@
   "rewrites": [
     {
       "source": "/register-page",
-      "destination": "https://your-backend-domain.example.com/register-page"
+      "destination": "https://examshield-license-erver.onrender.com/register-page"
     },
     {
       "source": "/payment",
-      "destination": "https://your-backend-domain.example.com/payment"
+      "destination": "https://examshield-license-erver.onrender.com/payment"
     },
     {
       "source": "/success",
-      "destination": "https://your-backend-domain.example.com/success"
+      "destination": "https://examshield-license-erver.onrender.com/success"
     },
     {
       "source": "/license-info",
-      "destination": "https://your-backend-domain.example.com/license-info"
+      "destination": "https://examshield-license-erver.onrender.com/license-info"
     },
     {
       "source": "/payment-config",
-      "destination": "https://your-backend-domain.example.com/payment-config"
+      "destination": "https://examshield-license-erver.onrender.com/payment-config"
     },
     {
       "source": "/verify",
-      "destination": "https://your-backend-domain.example.com/verify"
+      "destination": "https://examshield-license-erver.onrender.com/verify"
     },
     {
       "source": "/webhook/payment",
-      "destination": "https://your-backend-domain.example.com/webhook/payment"
+      "destination": "https://examshield-license-erver.onrender.com/webhook/payment"
     },
     {
       "source": "/admin",
-      "destination": "https://your-backend-domain.example.com/admin"
+      "destination": "https://examshield-license-erver.onrender.com/admin"
     },
     {
       "source": "/admin/reports",
-      "destination": "https://your-backend-domain.example.com/admin/reports"
+      "destination": "https://examshield-license-erver.onrender.com/admin/reports"
     },
     {
       "source": "/public/reports",
-      "destination": "https://your-backend-domain.example.com/public/reports"
+      "destination": "https://examshield-license-erver.onrender.com/public/reports"
     }
   ]
 }

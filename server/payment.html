@@ -141,6 +141,9 @@
     <div class="container">
         <h1>Complete Your Purchase</h1>
         <p class="subtitle">ExamShield License Activation</p>
+        <p style="text-align: center; margin-bottom: 20px;">
+            <a href="https://adulsportfolio.vercel.app/shop" style="color: #667eea; text-decoration: none;">← Back to Shop</a>
+        </p>
         
         <div id="licenseInfo" class="license-info">
             <div class="info-row">
@@ -157,7 +160,7 @@
             </div>
         </div>
         
-        <div class="price" id="price">$99.99</div>
+        <div class="price" id="price">Loading...</div>
         
         <div class="payment-options">
             <button class="payment-btn primary" id="razorpayBtn" onclick="initiateRazorpay()">
@@ -197,19 +200,30 @@
             }
 
             try {
-                // Get license info from server (you'll need to add this endpoint)
+                // Get license info from server
                 const response = await fetch(`${API_URL}/license-info?key=${licenseKey}`);
                 if (response.ok) {
                     licenseData = await response.json();
-                    document.getElementById('licenseType').textContent = (licenseData.device_type || 'individual').toUpperCase();
+                    const deviceType = licenseData.device_type || 'individual';
+                    document.getElementById('licenseType').textContent = deviceType.toUpperCase();
                     document.getElementById('customerName').textContent = licenseData.name || '—';
                     document.getElementById('customerEmail').textContent = licenseData.email || '—';
+                    
+                    // Set price based on license type
+                    const priceElement = document.getElementById('price');
+                    if (deviceType === 'organization') {
+                        priceElement.textContent = '$299.99';
+                    } else {
+                        priceElement.textContent = '$99.99';
+                    }
                 } else {
                     // Keep placeholders, show message
                     showMessage('Could not load license info. You can still continue to payment.', 'error');
+                    document.getElementById('price').textContent = '$99.99';
                 }
             } catch (error) {
                 showMessage('Network error while loading license info.', 'error');
+                document.getElementById('price').textContent = '$99.99';
             }
         }
 
@@ -232,13 +246,17 @@
 
             showLoading(true);
             
+            // Get amount based on license type
+            const deviceType = licenseData?.device_type || 'individual';
+            const amount = deviceType === 'organization' ? 29999 : 9999; // Amount in paise
+            
             // Create order on server
             fetch(`${API_URL}/create-razorpay-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     license_key: licenseKey,
-                    amount: 9999, // Amount in paise (₹99.99)
+                    amount: amount, // Amount in paise
                     currency: 'INR'
                 })
             })
